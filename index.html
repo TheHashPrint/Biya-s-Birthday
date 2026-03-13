@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shalimar Network | Biya</title>
+    <style>
+        body {
+            background-color: black;
+            color: #0dff00;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        #terminal-container { max-width: 600px; width: 90%; }
+        #terminal-text { white-space: pre-wrap; line-height: 1.8; font-size: 1.1rem; }
+        .hidden { display: none; }
+        .buttons-container { margin-top: 30px; }
+        button {
+            background: transparent;
+            border: 1px solid #0dff00;
+            color: #0dff00;
+            padding: 12px 30px;
+            font-family: inherit;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #0dff00; color: black; }
+        #no-btn { position: absolute; transition: 0.1s; }
+        .sad-face { font-size: 5rem; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="terminal-container">
+    <div id="terminal-text"></div>
+    <div id="options" class="hidden">
+        <p style="margin-top: 20px;">Do you wish to further proceed?</p>
+        <div class="buttons-container">
+            <button id="yes-btn" onclick="nextPhase()">YES</button>
+            <button id="no-btn">NO</button>
+        </div>
+    </div>
+    <div id="error-screen" class="hidden">
+        <div class="sad-face">☹️</div>
+        <p style="text-align: center; color: red;">OUCH OUCH OUCH! HOW DARE YOU!</p>
+    </div>
+</div>
+
+<audio id="sparrow-audio" src="https://www.myinstants.com/media/sounds/ouch-ouch-ouch.mp3"></audio>
+
+<script>
+    const lines = [
+        "> Connecting to Shalimar_Network...",
+        "> User Identified: Biya",
+        "> ...................",
+        "> Its your birthday so i made this for you.",
+        "> ...................",
+        "> Happy Birthday."
+    ];
+
+    const textContainer = document.getElementById("terminal-text");
+    const options = document.getElementById("options");
+    const noBtn = document.getElementById("no-btn");
+    const audio = document.getElementById("sparrow-audio");
+    const errorScreen = document.getElementById("error-screen");
+
+    let lineIndex = 0;
+
+    function typeLine() {
+        if (lineIndex < lines.length) {
+            let p = document.createElement("p");
+            textContainer.appendChild(p);
+            let charIndex = 0;
+            let currentLine = lines[lineIndex];
+            
+            let interval = setInterval(() => {
+                p.textContent += currentLine[charIndex];
+                charIndex++;
+                if (charIndex === currentLine.length) {
+                    clearInterval(interval);
+                    lineIndex++;
+                    setTimeout(typeLine, 600);
+                }
+            }, 50);
+        } else {
+            options.classList.remove("hidden");
+        }
+    }
+
+    // "No" button jumps away
+    noBtn.addEventListener("mouseover", moveButton);
+    noBtn.addEventListener("click", moveButton); // For mobile taps
+
+    function moveButton() {
+        const x = Math.random() * (window.innerWidth - 100);
+        const y = Math.random() * (window.innerHeight - 50);
+        noBtn.style.left = x + 'px';
+        noBtn.style.top = y + 'px';
+        
+        audio.play();
+        errorScreen.classList.remove("hidden");
+        setTimeout(() => { errorScreen.classList.add("hidden"); }, 2000);
+    }
+
+    function nextPhase() {
+        alert("Phase 2: Transitioning to Shalimar Memories...");
+        // Later we will change this to actually go to Phase 2
+    }
+
+    window.onload = typeLine;
+</script>
+
+</body>
+</html>
