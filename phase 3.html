@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE LILAC SNOOPY MAP</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@elfalem/leaflet-curve@0.9.1/dist/leaflet.curve.min.js"></script>
+    <style>
+        :root { --lavender: #E6E6FA; --lilac: #D8BFD8; --deep: #6B5B95; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #f3efff; font-family: 'Georgia', serif; }
+        
+        #map { width: 100%; height: 100%; position: absolute; z-index: 1; }
+
+        /* Lavender Overlay - No Blackout */
+        .map-tint {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(177, 156, 217, 0.2); /* Soft Lilac Tint */
+            pointer-events: none; z-index: 2;
+        }
+        
+        #status-bar {
+            position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--deep); padding: 15px 40px; border-radius: 50px;
+            z-index: 100; color: #FFF; font-style: italic; border: 1px solid var(--lavender);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); text-align: center; min-width: 320px;
+        }
+
+        #finale-btn {
+            position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(150px);
+            background: var(--lilac); color: var(--deep); padding: 20px 50px; border-radius: 50px;
+            z-index: 2000; border: none; cursor: pointer; letter-spacing: 4px; font-weight: bold;
+            transition: all 1s ease; opacity: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        #finale-btn.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+        .snoopy-plane { display: flex; flex-direction: column; align-items: center; z-index: 5000 !important; }
+        .snoopy-emoji { font-size: 55px; filter: drop-shadow(0 0 10px white) hue-rotate(240deg); }
+        .pilot-tag { background: white; color: var(--deep); font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; margin-top: -5px; }
+
+        .custom-dot { background: var(--lilac); border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px var(--lilac); }
+        .home-dot { background: white; border: 3px solid var(--lilac); border-radius: 50%; box-shadow: 0 0 20px var(--lilac); }
+        
+        .leaflet-tooltip {
+            background: white !important; color: var(--deep) !important;
+            border: 1px solid var(--lilac) !important; font-weight: bold !important;
+            font-size: 11px !important; opacity: 1 !important;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+<div class="map-tint"></div>
+<div id="status-bar">Mapping all the spots we visited...</div>
+<button id="finale-btn" onclick="location.href='phase4.html'">UNLOCK THE FINALE</button>
+
+<script>
+    // Clean tiles that won't turn black
+    const map = L.map('map', { zoomControl: false }).setView([31.5173, 74.3482], 14);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
+
+    const base = [31.5173, 74.3482]; // TCS Shalimar
+
+    const locations = [
+        { name: "Jaidi Pan Shop", c: [31.5134, 74.3485] },
+        { name: "Esajees Gulberg", c: [31.5080, 74.3490] },
+        { name: "Dominos Pizza", c: [31.5110, 74.3450] },
+        { name: "Papa Johns", c: [31.5095, 74.3460] },
+        { name: "Ghalib Market", c: [31.5150, 74.3430] },
+        { name: "Capri Restaurant", c: [31.5180, 74.3380] },
+        { name: "Al-Fatah Gulberg", c: [31.5105, 74.3435] },
+        { name: "LGS 1A1", c: [31.5230, 74.3450] },
+        { name: "Main Market", c: [31.5260, 74.3370] },
+        { name: "FCCU", c: [31.5250, 74.3310] },
+        { name: "Emporium Mall", c: [31.4674, 74.2663] },
+        { name: "Johnny Jugnu Ph 4", c: [31.4700, 74.4500] },
+        { name: "KFC Gulberg", c: [31.5120, 74.3420] },
+        { name: "McDonalds Gulberg", c: [31.5205, 74.3280] },
+        { name: "Paradise Ice Cream", c: [31.5190, 74.3350] },
+        { name: "Hafeez Centre", c: [31.5125, 74.3300] },
+        { name: "Kinnaird College", c: [31.5390, 74.3360] },
+        { name: "Rina's Kitchenette", c: [31.5140, 74.3440] },
+        { name: "Jade Cafe", c: [31.5070, 74.3475] },
+        { name: "Sheraton Davis Rd", c: [31.5560, 74.3270] },
+        { name: "TCS Model Town", c: [31.4850, 74.3250] },
+        { name: "TCS Muslim Town", c: [31.5180, 74.3150] },
+        { name: "Broadway Pizza", c: [31.5100, 74.3445] },
+        { name: "Karachi Paratha Roll", c: [31.5165, 74.3410] },
+        { name: "JJ Johar Town", c: [31.4650, 74.3000] },
+        { name: "Cheezious JT", c: [31.4720, 74.2980] },
+        { name: "Layers Gulberg", c: [31.5120, 74.3495] }
+    ];
+
+    L.marker(base, { icon: L.divIcon({ className: 'home-dot', iconSize: [22, 22] }) }).addTo(map).bindTooltip("TCS SHALIMAR", { permanent: true, direction: 'top' });
+
+    locations.forEach((loc, i) => {
+        setTimeout(() => {
+            const marker = L.marker(loc.c, { icon: L.divIcon({ className: 'custom-dot', iconSize: [12, 12] }) }).addTo(map);
+            marker.bindTooltip(loc.name, { permanent: true, direction: 'bottom', offset: [0, 5] });
+            L.curve(['M', base, 'Q', [ (base[0] + loc.c[0]) / 2 + 0.01, (base[1] + loc.c[1]) / 2 + 0.01 ], loc.c], { color: '#D8BFD8', weight: 3, opacity: 0.7 }).addTo(map);
+
+            if(i === locations.length - 1) setTimeout(takeoff, 4000);
+        }, i * 750);
+    });
+
+    function takeoff() {
+        const lhr = [31.5204, 74.4036], kl = [2.7456, 101.7072], monash = [3.0648, 101.6010];
+        document.getElementById('status-bar').innerText = "All memories linked. Snoopy is heading to Lahore International...";
+        map.flyTo(lhr, 15, { duration: 5 });
+
+        setTimeout(() => {
+            document.getElementById('status-bar').innerText = "Flying to Malaysia... ✈️";
+            const snoopyIcon = L.divIcon({ 
+                html: '<div class="snoopy-plane"><span class="snoopy-emoji">🛩️</span><span class="pilot-tag">PILOT SNOOPY</span></div>', 
+                className: '', iconSize: [100, 100] 
+            });
+            const plane = L.marker(lhr, { icon: snoopyIcon, zIndexOffset: 9999 }).addTo(map);
+
+            let start = null, duration = 18000;
+            function frame(ts) {
+                if (!start) start = ts;
+                let progress = (ts - start) / duration;
+                if (progress < 1) {
+                    let cur = [lhr[0] + (kl[0]-lhr[0])*progress, lhr[1] + (kl[1]-lhr[1])*progress];
+                    plane.setLatLng(cur);
+                    map.setView(cur, 6);
+                    requestAnimationFrame(frame);
+                } else {
+                    document.getElementById('status-bar').innerText = "We've landed, Welcome to the start of the rest of your life.";
+                    map.flyTo(monash, 15, { duration: 6 });
+                    setTimeout(() => {
+                        plane.setLatLng(monash);
+                        L.marker(monash).addTo(map).bindTooltip("MONASH MALAYSIA", { permanent: true, direction: 'top' });
+                        document.getElementById('finale-btn').classList.add('show');
+                    }, 7000);
+                }
+            }
+            requestAnimationFrame(frame);
+        }, 6000);
+    }
+</script>
+<button id="finale-btn" onclick="location.href='phase4.html'" style="
+    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); 
+    background: #D8BFD8; color: #4B0082; padding: 20px 50px; border-radius: 50px; 
+    z-index: 2000; border: 2px solid white; cursor: pointer; letter-spacing: 4px; 
+    font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+    PROCEED TO THE FINALE 🎂
+</button>
+
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE LAVENDER ARCHIVE</title>
+    <style>
+        :root {
+            --bg: #F3F0FF;
+            --soft-purple: #B19CD9;
+            --deep-purple: #6B5B95;
+            --text-color: #4A4A4A;
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            background: radial-gradient(circle, #F3F0FF 0%, #E6E6FA 100%);
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+            transition: opacity 1.5s ease;
+        }
+
+        /* --- HEAVY FLOATING PETALS --- */
+        .petal {
+            position: fixed;
+            background: linear-gradient(135deg, #e6e6fa 0%, #dcd0ff 100%);
+            border-radius: 150% 0 150% 50%;
+            z-index: 1; pointer-events: none; opacity: 0.6;
+            animation: float-around var(--d) infinite ease-in-out;
+        }
+        @keyframes float-around {
+            0% { transform: translateY(110vh) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            100% { transform: translateY(-20vh) translateX(100px) rotate(720deg); opacity: 0; }
+        }
+
+        /* --- THE SLOW-MO BURST (0.5x SPEED) --- */
+        .burst-particle {
+            position: fixed;
+            width: 12px; height: 12px;
+            background: #B19CD9;
+            border-radius: 150% 0 150% 50%;
+            z-index: 5000;
+            pointer-events: none;
+            /* Increased duration to 2.5s for that slow-motion drift effect */
+            animation: explode-fly 2.5s forwards cubic-bezier(0.1, 0.8, 0.2, 1);
+        }
+
+        @keyframes explode-fly {
+            0% { transform: translate(0, 0) scale(1.5) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--x), var(--y)) scale(0) rotate(540deg); opacity: 0; }
+        }
+
+        .container {
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            height: 100vh; position: relative; z-index: 10;
+        }
+
+        h1 { 
+            color: var(--deep-purple); font-weight: 300; letter-spacing: 12px; 
+            margin-bottom: 30px; font-size: 1.8rem; text-transform: uppercase;
+        }
+
+        .calendar-wrapper {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px);
+            padding: 40px; border-radius: 35px;
+            border: 1px solid rgba(177, 156, 217, 0.3);
+            box-shadow: 0 20px 60px rgba(107, 91, 149, 0.1);
+        }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 15px; }
+
+        .day-label {
+            text-align: center; color: var(--soft-purple);
+            font-size: 0.7rem; letter-spacing: 2px; padding-bottom: 10px;
+        }
+
+        .date-box {
+            width: 52px; height: 52px;
+            display: flex; justify-content: center; align-items: center;
+            border-radius: 50%; cursor: pointer; transition: all 0.4s ease;
+            font-size: 0.95rem; color: var(--text-color);
+            background: white; border: 1px solid rgba(150, 123, 182, 0.1);
+        }
+
+        .date-box.active:hover { 
+            background: var(--soft-purple); color: white;
+            transform: scale(1.15);
+        }
+
+        .date-box.read { color: var(--soft-purple); font-weight: bold; border: 2px solid var(--soft-purple); }
+
+        .date-box.target {
+            background: rgba(177, 156, 217, 0.1); color: var(--deep-purple);
+            border: 2px solid var(--soft-purple);
+            animation: pulsate-soft 3s infinite;
+        }
+
+        @keyframes pulsate-soft {
+            0%, 100% { box-shadow: 0 0 5px rgba(150, 123, 182, 0.3); transform: scale(1); }
+            50% { box-shadow: 0 0 25px rgba(150, 123, 182, 0.6); transform: scale(1.05); }
+        }
+
+        .date-box.dull { opacity: 0.1; cursor: default; }
+
+        .clue-text {
+            text-align: center; margin-top: 25px;
+            color: var(--soft-purple); font-size: 0.8rem;
+            font-style: italic; letter-spacing: 1px;
+        }
+
+        #modal {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); width: 85%; max-width: 480px;
+            background: white; padding: 40px; border-radius: 15px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.15); z-index: 3000;
+        }
+
+        .modal-body {
+            color: #444; line-height: 1.8; font-size: 1rem;
+            text-align: left; padding: 10px;
+            max-height: 420px; overflow-y: auto;
+        }
+        .modal-body::-webkit-scrollbar { width: 4px; }
+        .modal-body::-webkit-scrollbar-thumb { background: var(--soft-purple); }
+
+        #close-btn { 
+            cursor: pointer; color: var(--soft-purple); 
+            display: block; width: 100%; text-align: center; 
+            font-size: 0.8rem; letter-spacing: 2px; border: none; background: none; margin-top: 20px;
+        }
+
+        #transition-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); color: var(--deep-purple); z-index: 5000;
+            flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 1.5s ease;
+            font-style: italic; font-size: 1.6rem;
+        }
+    </style>
+</head>
+<body>
+
+<div id="mists-bg"></div>
+
+<div class="container">
+    <h1>THE LAVENDER ARCHIVE</h1>
+    <div class="calendar-wrapper">
+        <div class="calendar-grid" id="grid">
+            <div class="day-label">S</div><div class="day-label">M</div><div class="day-label">T</div>
+            <div class="day-label">W</div><div class="day-label">T</div><div class="day-label">F</div><div class="day-label">S</div>
+        </div>
+        <div class="clue-text">*23 memories await you, then only will the 24th be unlocked.*</div>
+    </div>
+</div>
+
+<div id="modal">
+    <div style="text-align: center; color: var(--soft-purple); font-size: 0.7rem; letter-spacing: 3px; margin-bottom: 20px;" id="modal-title"></div>
+    <div class="modal-body" id="modal-text"></div>
+    <button id="close-btn" onclick="closeModal()">BACK TO ARCHIVE</button>
+</div>
+
+<div id="transition-overlay">
+    <div>Patience, Biya.</div>
+    <div style="margin-top: 15px; font-size: 1rem; opacity: 0.6;">Syncing final parameters...</div>
+</div>
+
+<script>
+    const messages = {
+        1: "It's the third time already, but i cant help but start with how i first met you. I still remember how our paths first crossed. At the time, i didnt realize how someone so vibrant could exist, someone who just owned the space that exists. You were there, Just there and I could not admire you more ( and maybe think who is this woman)",
+        2: "The destined Ludo Game. You for sure cheated, there's no way you didnt. Ajeeb i remember i was blue and you were red. FIRE AND WOTAH. Fireboy and Watergirl. oh how we all used to play that game bachpan mien",
+        3: "Remember how we would hop on discord talking about the horniness of urdu poets. I remember that one time we spent hours talking about Anarkali, Dilaraam, Saleem and everything. I miss that",
+        4: "I miss our spotify Jams. We once said we would listen to rock music every single day, if not every other day. And we did. It used to be so fun. you'd get mad when i'd place my songs over yours, and then we'd bicker and everything. I miss that a lot.",
+        5: "Hello, this is Sir Sameer speaking. I assure you ma'am abeer is safe with me. See, she and all the other children did such a great job that i've taken them out to celebrate their accomplishments. I understand that it is getting late, but i promise i will get them back asap.<br><br>Wayyyyyyyy to throw me under the bus here :0",
+        6: "HOW CAN I NOT MENTION JAIDI. HOW DO I NOT MENTION IT. THAT WAS OUR VERY FIRST OUTING. HOW WE ALL WENT OUT AND FOUND OUT GOL GAPPAY CAN ALSO COST 650. HOW WE ALL WALKED THERE IN SCORCHING HEAT. AND YOU IN YOUR SIGNATURE YELLOW SUIT. I CAN NEVER FORGET THAT. YOU AND YOUR SUNSCREEN, AND YOU LEADING THE WAY. I'd always let you lead my way.",
+        7: "Invites dene jana tha humne, we had to ditch faizan and maheen somehow. we spent all night planning everything. your brought your urdu society president sash and I had my adventure club one. we exchanged that and all the while we listened to bayaan and early 2000s hindi songs. that was our first ever pic together i think. atleast thats the first one i have with me.",
+        8: "SUSU SUSU SUSSUUUU<br><br>now imagine this being played melodically. That was our susu corp. Ryan on the piano. you the lead vocalist, me on the guitar and everyone else as bg actors for our music video. I still have all them saved. I'll send them to you. we were gonna make everyone forget strings, and possibly chahat fateh ali khan too. im telling you we still have potential. Kuch na Kuch ho sakta hai. We must do something about it, but this time we must incorporate shits and farts too. life's incomplete without potty.",
+        9: "I remembered Gulabo today. How we found her in the campus, and you cradled her like its mother. That is one of my most favorite moments of you. I have it in my favorites. She was our Gulabo. Ours. All cared for her. i remember we were taking turns to hold her and you would not let Gulabo too. i had to wait so much to hold her!!!!!!!!!!",
+        10: "Gallery mien tha and I found our group pic from the directorate photoshoot. we were happy that day. truly happy. we annoyed zanab. we were late to the photoshoot. we missed our classes, but happy we were. its all so nostalgic. You and I, we were so excited to wear formals and have our pictures taken. you were so worried about your pic being taken. ke buri na aajaye and i remember you saying its so bad, but truly it encapsulated your entire being.",
+        11: "hanjee csmun ki yaad sata rahi hai aaj mujhe. lets start with day zero. busy busy busy. itna time guzaara video edit karne mien and then we went out to get broadway with wahaj and ahmad. i remember us walking and talking, and it was beautiful. AND THEN YOU FAINTED. THE FUNNY THING IS IZZAH AND I THOUGHT YOU WERE JUST SLEEPING. I REMEMBER I WAS ABOUT TO LEAVE I SAY BYE ABEER AND YOU DIDNT REPLY SO I ASSUMED YOU WERE ASLEEP BUT NO. AAPKO TOH FAINT HONA THA.<br><br>Fast forward to csmun itself. God, we lied so much. and you, YOU WERE THE LIE. WE LIED AT EVERY TURN KE ABEER'S SICK AND YOU DID END UP BEING SICK QAWALI PE. i was so worried that day. I was so reluctant to leave your side. Ajeeb tension deni hoti hai na.<br><br>Then came our bisti at the hands of our Shitty DG. Im telling you, we deserved more praise for that than any other thing. Phir uske baad we hosted our closing ceremony and my throat was giving out in the end and everything with your help with publications. That right there cemented us. Looking back, that was our defining moment and i would not give it up for anything else in the world. Oh, it truly was a beautiful day.",
+        12: "The very next day came our financial reckoning. i mean we were already broke by csmun but truly was it our reckoning that fated day. Chalay toh gaye janab council ki sashes wagaira le ke, but phir challay bhi ban gaye. Kitna maza aaya tha na. We have to go there again. Do you remember our pose by the pool. how we all dipped our feet in the water and how refreshing it felt. I like to think that feeling we felt. it wasnt just because of the water. it was something else, something indescribable. The food was goated tho. itnay mazaydaar naan. Uff Allah. so darn good. and phir Sir zaka ki car mien waapsi. You were in achima's lap and the car was filled to the brim, that also includes cigarette ki stench.",
+        13: "JOYLAND. how can we forget Joyland. We can't. Kon bhool sakta hai joyland ko. Classes le ke jana uber karana and then how everything began. Man, everything is so bittersweet. Do you remember how we took topspin and we were disoriented. i remember your face. it shouted overstimulation. Phir discovery and YOU, YOU WENT ALL PALE. how that guy scared you. Ah, it didnt end with the best course of action. I wish we could've had a different scenario. I wish everything could have been just a little different. Perhaps it wouldve been just a tad bit better.",
+        14: "BARBOOKI<br><br>how that day started. Mids Khatam huye thay and we were all getting ready for the barbooki, sir Awais Pookie. (had to make it rhyme). Packages se shuru huye. Window shopping ki thi and then we SNORTED POWDERED SUGAR. Hah that was an experience. an aunty nearby judged me so bad, i'll never forget her judgmental stare. Abdur rehman ki birthday celebrate ki and then we cooked everything ourselves.<br><br>I remember a very specific moment where this lady was on call with her mother and some nonchalant clairo listening 6'2 feminist came up and started saying cigarette do. Just look at the nonchalantness. the audacity, am i right? phir woh susheel larka( that lady's words, not mine) gayab hogya taa ke woh aur gussa na dilaye and apologised for so long that the lady got tired of it and gave in. Pata nahi kaise kaise log aajate hain na.",
+        15: "do you remember how we always sat by the speakers. it was just songs and songs and countless songs, aik ke baad aik. that was our thing. Our song choice was so similar. do you remember the night where we just listened to Kaafizyada on repeat. I tried doing that recently, but i couldnt. Not because i was unable to, but simply that i never could do it without you. for better or for worse, you are my constant.",
+        16: "WAFFLES. we're getting waffles, i go and place the order and what do i come back with: only the most nuttiest ice cream ever for the person with the most screws loose. I swear you wanted to off me right there and then. Idk what gave to your benevolence that day but thanks to that i still breathe. I never knew that overstimulation was like that. and man did i suck at recognizing it. You just stormed off to campus, equal parts overstimulated and angry and i was left in idk what even. And you, YOU WERENT EVEN ACCEPTING MY APOLOGY, MA'AM SADIA KE OFFICE MIEN JAA KE YOU DID SO. Still, it remains in my heart, having found its resting place for eternity.",
+        17: "i was thinking how to plan your birthday today and thought about all the previous iterations.<br><br>2024 mien we planned it a month before. Got the custom cake ordered, the vendor somehow messed it up. we had to redo it with the design. polaroids dhoondhna. i think theyve become a constant abh toh. laazmi hain dher saare polaroids.<br><br>I woke up at 3 that day. perfected all your gifts, foolproofed the plan, the car, even checked the spare tyres to make sure everything was on time. phir snowsprays lene gaya, cake and stuff. All while pretending that i wasnt coming to campus. Zanab and I had to let ma'am saadia in on the plan taa ke samaan laanay ki permission mil jaati. I hated every second that was not spent with you, and how i had to pretend that we did nothing for your birthday. and WELL NASIR KHAN JAN KI VIDEO BHI That is so goated.",
+        18: "do you remember the day we wore similar clothes. it was our blue checkered shirts. we didnt know that we were gonna do that, yet we did. That day wasnt anything special, but in all its mundanity it remained special. Aise hi woh din tha jab we all got zombies and dyed our tongues blue. we did such random stuff. jaib mien paise hote nahi thay ke chalo esajees chalien, knowing the only thing we could afford was the fabric bag they gave for free. WAIT THIS REMINDS ME THE TIME IT WAS YOU GUYS' WELCOME AND WE WENT TO ESAJEES TO GET CHAI AND IZZAH MESSED WITH THE MACHINES AND THEN WE HAD TO PAY EXTRA. Phir uske baad we all got ready camous mien hi. Kitna maza aaya tha. we barely knew each other then and yet it felt like i knew you for ages.",
+        19: "Bonfire ko mien kaise bhool sakta hu. I think I have a special ability to make you angry. Call it my god given gift. I strongly believe that in doing so, we cemented our bond even further. You were furious that day. Zanab told me how you wanted to never talk to me and everything and i asked everyone for advice on how to proceed. it was scaryyy. pata nahi kitni dfa gussa dila deta hu. Do know that it'll happen again and again. but kher hai na itna toh chalta hai. but hey, i always do make it upto you.",
+        20: "farewell. holi. shirt signing. these days are all so closely intertwined that even if i tried i could not divide them. I remember every single individual detail. And hello, I've perfected mera bichra yaar so we must sing it agli dfa. Im trying to find the words to write for today, but somehow it seems impossible. Words wont do anything justice. If I am trying, i must say that those days will remain with me in this world and the next.",
+        21: "i was planning for summers today for when you come back. There's festivals, movies so much to do. I hope you look forward to it as much as I do. Roz kuch na kuch yaad aajata hai kabhi woh waqt jabh canteen se chowmein kha lete thay. That time, you guys ransacked miss asma's class and she was so confused. I wish i could list every moment, but you'd get sooooooo old. do you remember the random samosa hunts? Jabh hum log gaye thay besan waale naan dhoondhne. it had rained the night before, and our ssf photoshoot was due too. hum jaldi se karwa ke dhoondhne chalay gaye and it was so fun. aa ke garma garam khaye. aaya baaji's ko bhi diye aur phir bisti bhi hui thi ma'am Sadia se for god knows why. I also just remembered the time where you told us you saw her at emporium. Hah",
+        22: "Aaj JJ khanay ka dil hai. I'm always so jealous of how close your home is to JJ. Dil kia JJ kha lia. It also reminds me of how we're just a couple of JJpaglus. I've only had it twice since you left. Woh maza nahi without your presence. As i was going down this road, i remembered your youtube video ravi campus mien singing waali. its always so funny. It also reminds me of our day at readings. How we read that smut with a not so serious face. we've a few screws loose in the head. but thats just how i prefer it.",
+        23: "i've been thinking about what ive written for the past 22 days. It wouldnt any sense to anyone else, but to you it would. I am proud of the person you've become.<br><br>Not in the loud, obnoxious ways people usually talk about, but in the smaller things. Somewhere along the way, this stopped being about writing every day. It became about you, about trying to put something indescribable into words that fall short every single time. Maybe, even after all this time, i still havent been able to say it properly, but you matter in ways that now dont need to be announced to be real. The Truth is youve found your way into the spaces between these lines. In the pauses, in the things i couldnt fully say, in the words i rewrote more than i would like to admit. But for now, i want you to know that none of these days were random, not a single one.<br><br>Youre the only one for whom these words would make sense, because youve been part of them from the start."
+    };
+
+    const calendarGrid = document.getElementById('grid');
+    for (let i = 1; i <= 31; i++) {
+        const box = document.createElement('div');
+        box.className = 'date-box';
+        box.innerText = i;
+        if (i < 24) {
+            box.classList.add('active');
+            box.onclick = (e) => { megaBurst(e); showLetter(i, box); };
+        } else if (i === 24) {
+            box.classList.add('target');
+            box.onclick = (e) => { megaBurst(e); startFinale(); };
+        } else {
+            box.classList.add('dull');
+        }
+        calendarGrid.appendChild(box);
+    }
+
+    function megaBurst(e) {
+        for (let i = 0; i < 45; i++) {
+            const p = document.createElement('div');
+            p.className = 'burst-particle';
+            p.style.left = e.clientX + 'px';
+            p.style.top = e.clientY + 'px';
+            p.style.setProperty('--x', (Math.random()*600 - 300) + 'px');
+            p.style.setProperty('--y', (Math.random()*600 - 300) + 'px');
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 2500); // Particles stay longer for slow-mo effect
+        }
+    }
+
+    function showLetter(day, element) {
+        document.getElementById('modal-title').innerText = "MARCH " + day + ", 2026";
+        document.getElementById('modal-text').innerHTML = messages[day];
+        document.getElementById('modal').style.display = 'block';
+        element.classList.add('read');
+    }
+
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+    function startFinale() {
+        const ov = document.getElementById('transition-overlay');
+        ov.style.display = 'flex';
+        setTimeout(() => { ov.style.opacity = '1'; }, 100);
+        setTimeout(() => window.location.href = "phase3.html", 3500);
+    }
+
+    const mists = document.getElementById('mists-bg');
+    for (let i = 0; i < 60; i++) { // Increased petals for more "Lavender Forest" vibe
+        const p = document.createElement('div');
+        p.className = 'petal';
+        p.style.left = Math.random() * 100 + 'vw';
+        p.style.width = p.style.height = (Math.random() * 18 + 12) + 'px';
+        p.style.setProperty('--d', (Math.random() * 10 + 10) + 's');
+        p.style.animationDelay = Math.random() * 15 + 's';
+        mists.appendChild(p);
+    }
+</script>
+<div style="position: relative; z-index: 1000; text-align: center; padding: 40px 0;">
+    <button onclick="location.href='phase3.html'" style="
+        padding: 18px 45px; 
+        background: #B19CD9; 
+        color: white; 
+        border: 2px solid white; 
+        border-radius: 50px; 
+        font-family: 'Georgia', serif; 
+        font-size: 1.3rem; 
+        cursor: pointer; 
+        box-shadow: 0 0 30px rgba(177,156,217,0.6);
+        font-weight: bold;
+        transition: 0.3s;
+        letter-spacing: 2px;">
+        PROCEED TO PHASE 3 🗺️
+    </button>
+</div>
+</body>
+</html>
